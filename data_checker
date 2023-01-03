@@ -1,2 +1,21 @@
-ws_cols:94 ws_row:31
-
+text: 1 curosr postion: x:1, y:1
+text: 2 curosr postion: x:2, y:1
+text: 3 curosr postion: x:3, y:1
+text: 4 curosr postion: x:4, y:1
+text: 9 curosr postion: x:5, y:1
+text: 8 curosr postion: x:6, y:1
+text: 7 curosr postion: x:7, y:1
+text:  curosr postion: x:8, y:1
+delete word 7
+text:  curosr postion: x:7, y:1
+delete word 8
+text:  curosr postion: x:6, y:1
+delete word 9
+text:  curosr postion: x:5, y:1
+delete word 4
+text:  curosr postion: x:4, y:1
+delete word 3
+text:  curosr postion: x:3, y:1
+delete word 2
+text:  curosr postion: x:2, y:1
+delete word 1

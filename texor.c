@@ -61,12 +61,15 @@ FILE *test=NULL;
 /*** data ***/
 typedef struct functionstruct{
   int type;
+  int cursor_x;
+  int cursor_y;
   char content;
 } FunctionStruct;
 
 typedef struct Node{
   FunctionStruct data;
-  struct Node*  next; 
+  struct Node* next;
+  struct Node* prev; 
 }FnNode;
 
 FnNode* head = NULL;
@@ -155,6 +158,7 @@ struct editorSyntax HLDB[] = {
 void editorSetStatusMessage(const char *fmt, ...);
 void editorRefreshScreen();
 char *editorPrompt(char *prompt, void (*callback)(char *, int));
+int get_pos(int *y, int *x);
 
 /*** terminal ***/
 
@@ -231,11 +235,6 @@ int editorReadKey() {
 
     return '\x1b';
   } else {
-    
-    head = (FnNode*)malloc(sizeof(FnNode));
-    head -> data.type= NORMAL;
-    head -> data.content = c;
-    head = head -> next;
     return c;
   }
 }
@@ -534,6 +533,7 @@ void editorRowInsertChar(erow *row, int at, int c) {
 
 void editorRowDelChar(erow *row, int at) {
   if (at < 0 || at >= row->size) return;
+
   memmove(&row->characters[at], &row->characters[at + 1], row->size - at);
   row->size--;
   editorUpdateRow(row);
@@ -579,6 +579,9 @@ void editorDelChar() {
   if (E.file_position_x == 0 && E.file_position_y == 0) return;
 
   erow *row = &E.row[E.file_position_y];
+
+  fprintf(test, "delete word %c\n",row->characters[E.file_position_x - 1]);
+  
   if (E.file_position_x > 0) {
     editorRowDelChar(row, E.file_position_x - 1);
     E.file_position_x--;
@@ -989,6 +992,10 @@ void editorMoveCursor(int key) {
 }
 
 void editorProcessKeypress() {
+  FnNode *tmp;
+  tmp = (FnNode*)malloc(sizeof(FnNode));
+  int x = 0, y = 0;
+
   static int quit_times = TEXOR_QUIT_TIMES;
 
   int c = editorReadKey();
@@ -1028,12 +1035,23 @@ void editorProcessKeypress() {
       break;
 
     case BACKSPACE:
-      // head = (FnNode*)malloc(sizeof(FnNode));
-      // head -> data.type= DELETE;
-      // head -> data.content = c;
-      // head = head -> next;
     case CTRL_KEY('h'):
     case DEL_KEY:
+      get_pos(&y, &x);
+      
+      tmp -> data.type= DELETE;
+      tmp -> data.content = c;
+      tmp -> data.cursor_x = x;
+      tmp -> data.cursor_y = y;
+
+      tmp -> next = head;
+      tmp -> prev = NULL;
+
+      if (head != NULL){
+            head -> prev = tmp;
+      }
+      head = tmp;
+      fprintf(test, "text: %c curosr postion: x:%d, y:%d\n", head -> data.content, head -> data.cursor_x, head -> data.cursor_y);
       if (c == DEL_KEY) editorMoveCursor(ARROW_RIGHT);
       editorDelChar();
       break;
@@ -1066,16 +1084,59 @@ void editorProcessKeypress() {
       break;
 
     case CTRL_KEY('y'):
-      
+      if(head != NULL){
+        tmp = head;
+        head = head -> prev;
+        if (tmp -> data.type == NORMAL){
+          fprintf(test, "get redo: %d;%d ", tmp -> data.cursor_y, tmp -> data.cursor_x);
+          E.file_position_y = tmp -> data.cursor_y-1;
+          E.file_position_x = tmp -> data.cursor_x-1;
+          c = tmp -> data.content;
+          fprintf(test, "E.file: %d %d\n", E.file_position_y, E.file_position_x);
+          editorInsertChar(c);
+        }
+      }
       break;
 
     case CTRL_KEY('z'):
-      if (c == NORMAL) editorMoveCursor(ARROW_RIGHT);
-      editorDelChar();
-
+      if(head != NULL){
+        tmp = head;
+        head = head -> next;
+        if (tmp -> data.type == NORMAL){
+          // fprintf(test, "get undo: %d;%d ", tmp->data.cursor_y, tmp->data.cursor_x);
+          E.file_position_y = tmp->data.cursor_y-1;
+          E.file_position_x = tmp->data.cursor_x;
+          // fprintf(test, "E.file: %d %d\n", E.file_position_y, E.file_position_x);
+          editorDelChar();
+        }
+        else if (tmp -> data.type == DELETE){
+          fprintf(test, "get delete undo: %c;%d;%d ", tmp -> data.content, tmp->data.cursor_y, tmp->data.cursor_x);
+          E.file_position_y = tmp->data.cursor_y-1;
+          E.file_position_x = tmp->data.cursor_x;
+          c = tmp -> data.content;
+          // fprintf(test, "E.file: %d %d\n", E.file_position_y, E.file_position_x);
+          editorInsertChar(c);
+        }
+      }
       break;
 
     default:
+      get_pos(&y, &x);
+      
+      tmp -> data.type= NORMAL;
+      tmp -> data.content = c;
+      tmp -> data.cursor_x = x;
+      tmp -> data.cursor_y = y;
+
+      tmp -> next = head;
+      tmp -> prev = NULL;
+
+      if (head != NULL){
+            head -> prev = tmp;
+      }
+      head = tmp;
+      fprintf(test, "text: %c curosr postion: x:%d, y:%d\n", head -> data.content, head -> data.cursor_x, head -> data.cursor_y);
+
       editorInsertChar(c);
       break;
   }
@@ -1103,8 +1164,54 @@ void initEditor() {
   E.screen_rows -= 2;
 }
 
+int get_pos(int *y, int *x) {
+
+    char buf[30]={0};
+    int ret, i, pow;
+    char ch;
+
+    *y = 0; *x = 0;
+
+    struct termios term, restore;
+
+    tcgetattr(0, &term);
+    tcgetattr(0, &restore);
+    term.c_lflag &= ~(ICANON|ECHO);
+    tcsetattr(0, TCSANOW, &term);
+
+    write(1, "\033[6n", 4);
+
+    for( i = 0, ch = 0; ch != 'R'; i++ )
+    {
+        ret = read(0, &ch, 1);
+        if ( !ret ) {
+          tcsetattr(0, TCSANOW, &restore);
+          fprintf(stderr, "getpos: error reading response!\n");
+          return 1;
+        }
+        buf[i] = ch;
+        printf("buf[%d]: \t%c \t%d\n", i, ch, ch);
+    }
+
+    if (i < 2) {
+        tcsetattr(0, TCSANOW, &restore);
+        printf("i < 2\n");
+        return(1);
+    }
+
+    for( i -= 2, pow = 1; buf[i] != ';'; i--, pow *= 10)
+        *x = *x + ( buf[i] - '0' ) * pow;
+
+    for( i-- , pow = 1; buf[i] != '['; i--, pow *= 10)
+        *y = *y + ( buf[i] - '0' ) * pow;
+
+    tcsetattr(0, TCSANOW, &restore);
+    return 0;
+}
 
 int main(int argc, char *argv[]) {
+  
+  head = (FnNode*)malloc(sizeof(FnNode));
   test=fopen("data_checker","w+");
 
   enableRawMode();
@@ -1114,7 +1221,7 @@ int main(int argc, char *argv[]) {
   }
 
   editorSetStatusMessage(
-      "HELP: Ctrl-S = save | Ctrl-Q = quit | Ctrl-F = find");
+      "HELP: Ctrl-S = save | Ctrl-Q = quit | Ctrl-Z = undo | Ctrl-F = find");
 
   while (1) {
     editorRefreshScreen();
