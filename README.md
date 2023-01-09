@@ -1,8 +1,4 @@
-# texor
-
-A simple text editor written in C.
-
-I'm following along with a [tutorial](http://viewsourcecode.org/snaptoken/kilo/) to build an editor like [kilo](http://antirez.com/news/108).
+# Text editor
 
 ## Compiling
 
@@ -24,7 +20,7 @@ After running `make`, run:
 
 ### Create New File
 
-Create a new file by running `texor` with no command-line argument.
+Create a new file by running `text` with no command-line argument.
 
 ```
 ./texor
@@ -32,10 +28,10 @@ Create a new file by running `texor` with no command-line argument.
 
 ### Edit Existing File
 
-Edit an existing file by running `texor` with the filename as a command-line argument.
+Edit an existing file by running `text` with the filename as a command-line argument.
 
 ```
-./texor texor.c
+./text test_file
 ```
 
 ### Status Bar
@@ -44,11 +40,11 @@ A status bar is shown in the second-from-the-bottom row, and uses inverted color
 
 ### Message Bar
 
-A message bar is shown in the bottom row and initially tells you how to save, search, and quit. As you use the program, it may display other information.
+A message bar is shown in the bottom row and initially gives you some instructions to this program. As you use the program, it may display other information when needed.
 
 ### Editing Text
 
-You can edit text normally by type characters, insert new lines, backspacing across lines, splitting lines of text, etc.
+You can edit text normally by type characters, insert new lines, backspacing across lines, or splitting lines, etc.
 
 ### Navigating
 
@@ -74,10 +70,6 @@ Type in your search term and the screen will highlight the first match found. Us
 
 Type `Enter` to finish searching and leave your cursor on that search result or `Esc` to cancel and return your cursor to where it was before the search.
 
-### Syntax Highlighting
-
-Syntax highlighting colors strings, numbers, keywords, and comments for files in both the C and Ruby programming languages.
-
 ### Quitting
 
 Type `Ctrl-Q` to quit.
@@ -97,3 +89,5 @@ Project: https://github.com/antirez/kilo
 Copyright (c) 2016, Salvatore Sanfilippo <antirez at gmail dot com>  
 License: BSD 2-Clause, https://github.com/antirez/kilo/blob/master/LICENSE
 
+Project: https://github.com/kyletolle/texor
+License: BSD 2-Clause, https://github.com/kyletolle/texor/blob/master/LICENSE

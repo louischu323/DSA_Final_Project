@@ -1,2 +1,2 @@
-texor: texor.c
-	$(CC) texor.c -o texor -Wall -Wextra -pedantic -std=c99
+text: text_ed.c
+	$(CC) text_ed.c -o text -Wall -Wextra -pedantic -std=c99
