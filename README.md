@@ -23,7 +23,7 @@ After running `make`, run:
 Create a new file by running `text` with no command-line argument.
 
 ```
-./texor
+./text
 ```
 
 ### Edit Existing File
